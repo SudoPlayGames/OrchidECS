@@ -54,10 +54,13 @@ The world is the heart of the module and the entry point for users.
 * Entity sets are retained by strong reference, indexed by filter, and reused.
 * Entity sets are injected into annotated objects registered with the WorldBuilder during world creation.
 * Entity sets are read-only.
-* Entity sets have two events, add and remove, that can be accumulated and polled using observers.
-* Entity set observers are created by calling EntitySet#newObserverEventEntityAdd and EntitySet#newObserverEventEntityRemove.
-* Entity set observers are created for each request and retained by weak reference.
-  * Entity set observers should be handled with care; an observer will start accumulating entity references as soon as it is created and is only ever cleared of references when it is polled. An observer that is not dereferenced properly can go un-polled and can be a potential memory leak.
+
+### Entity Set Event Deque
+
+* Entity sets have two events, add and remove, that can be accumulated and polled using deques.
+* Entity set deques are created by calling EntitySet#newDequeEventEntityAdd and EntitySet#newDequeEventEntityRemove.
+* Entity set deques are created for each request and retained by weak reference.
+  * Entity set deques should be handled with care; a deque will start accumulating entity references as soon as it is created and is only ever cleared of references when it is polled. A deque that is not dereferenced properly can go un-polled and can be a potential memory leak.
 
 ### Event Handler
 
