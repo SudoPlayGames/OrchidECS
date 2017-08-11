@@ -1,4 +1,4 @@
-# OrchidECS v1.0-RC1
+# OrchidECS
 
 An entity component system (ECS) for the JVM inspired by Artemis and Terrasology.
 
