@@ -10,6 +10,10 @@ if (JavaVersion.current().isJava8Compatible()) {
     }
 }
 
+group = 'com.sudoplay.ecs'
+version = new File("${project.projectDir}/project.version").text
+archivesBaseName = 'OrchidECS'
+
 repositories {
     mavenCentral()
 }
@@ -49,7 +53,25 @@ signing {
 }
 
 def isReleaseBuild() {
-    return VERSION_NAME.contains("SNAPSHOT") == false;
+    return version.contains("SNAPSHOT") == false;
+}
+
+def getReleaseRepositoryUrl() {
+    return hasProperty('RELEASE_REPOSITORY_URL') ? RELEASE_REPOSITORY_URL
+            : "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+}
+
+def getSnapshotRepositoryUrl() {
+    return hasProperty('SNAPSHOT_REPOSITORY_URL') ? SNAPSHOT_REPOSITORY_URL
+            : "https://oss.sonatype.org/content/repositories/snapshots/"
+}
+
+def getRepositoryUsername() {
+    return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
+}
+
+def getRepositoryPassword() {
+    return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
 }
 
 //noinspection GroovyAssignabilityCheck
@@ -58,11 +80,16 @@ uploadArchives {
         mavenDeployer {
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-            pom.groupId = GROUP
-            pom.artifactId = POM_ARTIFACT_ID
-            pom.version = VERSION_NAME
+            pom.groupId = group
+            pom.artifactId = archivesBaseName
+            pom.version = version
 
-            repository(url: LOCAL_REPOSITORY_URL)
+            repository(url: getReleaseRepositoryUrl()) {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+            }
+            snapshotRepository(url: getSnapshotRepositoryUrl()) {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+            }
 
             pom.project {
                 name POM_NAME

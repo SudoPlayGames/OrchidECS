@@ -180,7 +180,7 @@ elif [[ "${com}" == "set" ]]; then
 	esac
 
 	header "Write File"
-	echo "${val}" > "${file}"
+	echo -n "${val}" > "${file}"
 	result=`cat "${file}"`
 	if [[ ! "${result}" == "${val}" ]]; then
 		die "   [!!] Unable to write [${val}] to [${file}]"
