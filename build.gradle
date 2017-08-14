@@ -19,8 +19,6 @@ repositories {
 }
 
 dependencies {
-    compile 'ch.qos.logback:logback-classic:1.1.2'
-    compile 'ch.qos.logback:logback-core:1.1.2'
     compile 'org.slf4j:slf4j-api:1.7.7'
     compile 'org.slf4j:slf4j-ext:1.7.7'
 
@@ -84,9 +82,9 @@ uploadArchives {
         mavenDeployer {
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-            pom.groupId = group
-            pom.artifactId = archivesBaseName
-            pom.version = version
+            pom.groupId = project.group
+            pom.artifactId = project.archivesBaseName
+            pom.version = project.version
 
             repository(url: getReleaseRepositoryUrl()) {
                 authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
