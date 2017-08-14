@@ -25,7 +25,8 @@ public class AspectDefault implements
 
     if (!this.allSet.isEmpty()) {
 
-      for (int i = this.allSet.nextSetBit(0); i >= 0; i = this.allSet.nextSetBit(i + 1)) {
+      for (int i = this.allSet.nextSetBit(0); i >= 0; i = this.allSet.nextSetBit(
+          i + 1)) {
 
         if (!componentBitSet.get(i)) {
           return false;
@@ -35,6 +36,7 @@ public class AspectDefault implements
 
     }
 
+    //noinspection SimplifiableIfStatement
     if (!this.excludeSet.isEmpty()
         && this.excludeSet.intersects(componentBitSet)) {
       return false;
@@ -47,22 +49,26 @@ public class AspectDefault implements
   @Override
   public boolean equals(Object o) {
 
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     AspectDefault aspect = (AspectDefault) o;
 
-    if (!allSet.equals(aspect.allSet)) return false;
-    if (!excludeSet.equals(aspect.excludeSet)) return false;
-    return oneSet.equals(aspect.oneSet);
+    return this.allSet.equals(aspect.allSet)
+        && excludeSet.equals(aspect.excludeSet)
+        && oneSet.equals(aspect.oneSet);
   }
 
   @Override
   public int hashCode() {
 
-    int result = allSet.hashCode();
-    result = 31 * result + excludeSet.hashCode();
-    result = 31 * result + oneSet.hashCode();
+    int result = this.allSet.hashCode();
+    result = 31 * result + this.excludeSet.hashCode();
+    result = 31 * result + this.oneSet.hashCode();
     return result;
   }
 

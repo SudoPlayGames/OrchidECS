@@ -1,7 +1,6 @@
 package com.sudoplay.ecs.integration.api;
 
-import com.sudoplay.ecs.integration.spi.EntitySetEventHandler;
-
+import java.util.Deque;
 import java.util.function.Consumer;
 
 public interface EntitySet {
@@ -10,6 +9,8 @@ public interface EntitySet {
 
   void forEach(Consumer<Entity> consumer);
 
-  void subscribe(EntitySetEventHandler eventHandler);
+  Deque<Entity> newDequeEventEntityAdd();
+
+  Deque<Entity> newDequeEventEntityRemove();
 
 }

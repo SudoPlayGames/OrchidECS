@@ -2,7 +2,6 @@ package com.sudoplay.ecs.core;
 
 import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.api.EntitySet;
-import com.sudoplay.ecs.integration.spi.EntitySetEventHandler;
 import net.openhft.koloboke.collect.map.hash.HashLongObjMaps;
 
 import java.lang.ref.Reference;
@@ -20,7 +19,8 @@ public class EntitySetInternal implements
   private Map<Long, BitSet> entityComponentBitSetMap;
   private Aspect aspect;
   private Map<Long, Entity> entityMap;
-  private List<Reference<EntitySetEventHandler>> eventHandlerList;
+  private List<Reference<Deque<Entity>>> eventHandlerAddList;
+  private List<Reference<Deque<Entity>>> eventHandlerRemoveList;
 
   /* package */ EntitySetInternal(
       Map<Long, BitSet> entityComponentBitSetMap,
@@ -34,7 +34,8 @@ public class EntitySetInternal implements
         .getDefaultFactory()
         .newUpdatableMap();
 
-    this.eventHandlerList = new ArrayList<>();
+    this.eventHandlerAddList = new ArrayList<>();
+    this.eventHandlerRemoveList = new ArrayList<>();
   }
 
   /* package */ void onSystemEvent(
@@ -65,7 +66,7 @@ public class EntitySetInternal implements
 
         // notify our subscribers and do some reference bookkeeping
 
-        this.subscriberNotifyEntityAdded(entity);
+        this.observerNotify(entity, this.eventHandlerAddList);
 
       } else if (!interested && contains) {
 
@@ -77,7 +78,7 @@ public class EntitySetInternal implements
 
         // notify our subscribers and do some reference bookkeeping
 
-        this.subscriberNotifyEntityRemoved(entity);
+        this.observerNotify(entity, this.eventHandlerRemoveList);
 
       } else if (contains) {
 
@@ -101,7 +102,7 @@ public class EntitySetInternal implements
 
         // notify our subscribers and do some reference bookkeeping
 
-        this.subscriberNotifyEntityRemoved(entity);
+        this.observerNotify(entity, this.eventHandlerRemoveList);
 
       }
 
@@ -123,18 +124,33 @@ public class EntitySetInternal implements
   }
 
   @Override
-  public void subscribe(EntitySetEventHandler eventHandler) {
+  public Deque<Entity> newDequeEventEntityAdd() {
 
-    this.eventHandlerList.add(new WeakReference<>(eventHandler));
+    Deque<Entity> observer = new LinkedList<>();
+    this.eventHandlerAddList.add(new WeakReference<>(observer));
+
+    return observer;
   }
 
-  private void subscriberNotifyEntityAdded(EntityInternal entity) {
+  @Override
+  public Deque<Entity> newDequeEventEntityRemove() {
 
-    for (Iterator<Reference<EntitySetEventHandler>> iterator = this.eventHandlerList.iterator(); iterator.hasNext(); ) {
+    Deque<Entity> observer = new LinkedList<>();
+    this.eventHandlerRemoveList.add(new WeakReference<>(observer));
 
-      Reference<EntitySetEventHandler> ref = iterator.next();
+    return observer;
+  }
 
-      EntitySetEventHandler eventHandler = ref.get();
+  private void observerNotify(
+      EntityInternal entity,
+      List<Reference<Deque<Entity>>> list
+  ) {
+
+    for (Iterator<Reference<Deque<Entity>>> iterator = list.iterator(); iterator.hasNext(); ) {
+
+      Reference<Deque<Entity>> ref = iterator.next();
+
+      Deque<Entity> eventHandler = ref.get();
 
       if (eventHandler == null) {
         iterator.remove();
@@ -142,28 +158,10 @@ public class EntitySetInternal implements
         continue;
       }
 
-      eventHandler.onEventEntityAdded(entity);
+      eventHandler.offer(entity);
 
     }
-  }
 
-  private void subscriberNotifyEntityRemoved(EntityInternal entity) {
-
-    for (Iterator<Reference<EntitySetEventHandler>> iterator = this.eventHandlerList.iterator(); iterator.hasNext(); ) {
-
-      Reference<EntitySetEventHandler> ref = iterator.next();
-
-      EntitySetEventHandler eventHandler = ref.get();
-
-      if (eventHandler == null) {
-        iterator.remove();
-        ref.clear();
-        continue;
-      }
-
-      eventHandler.onEventEntityRemoved(entity);
-
-    }
   }
 
 }
