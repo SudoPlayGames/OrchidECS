@@ -1,6 +1,20 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'signing'
+buildscript {
+    repositories {
+        maven { url 'http://repo.spring.io/plugins-release' }
+    }
+    dependencies {
+        classpath 'io.spring.gradle:propdeps-plugin:0.0.9.RELEASE'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'maven'
+    id 'signing'
+}
+
+apply plugin: 'propdeps'
+apply plugin: 'propdeps-idea'
 
 if (JavaVersion.current().isJava8Compatible()) {
     allprojects {
@@ -19,11 +33,14 @@ repositories {
 }
 
 dependencies {
+    provided 'com.koloboke:koloboke-compile:0.5.1'
+    compile 'com.koloboke:koloboke-impl-common-jdk8:1.0.0'
+
+//    compile 'net.openhft:koloboke-impl-jdk8:0.6.8'
+//    compile 'net.openhft:koloboke-api-jdk8:0.6.8'
+
     compile 'org.slf4j:slf4j-api:1.7.7'
     compile 'org.slf4j:slf4j-ext:1.7.7'
-
-    compile 'net.openhft:koloboke-api-jdk8:0.6.8'
-    compile 'net.openhft:koloboke-impl-jdk8:0.6.8'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.10.19'

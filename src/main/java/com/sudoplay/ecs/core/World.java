@@ -3,8 +3,7 @@ package com.sudoplay.ecs.core;
 import com.sudoplay.ecs.integration.api.ComponentMapper;
 import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.spi.*;
-import net.openhft.koloboke.collect.map.hash.HashIntObjMap;
-import net.openhft.koloboke.collect.map.hash.HashLongObjMaps;
+import com.sudoplay.ecs.koloboke.EntityIdComponentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,7 @@ public class World {
    * <p>
    * This allows returning the same entity object for subsequent requests.
    */
-  private Map<Long, Reference<EntityInternal>> entityMap;
+  private Map<Long, Reference<EntityInternal>> entityReferenceMap;
 
   /**
    * Stores the meta information about components registered for use with
@@ -110,6 +109,7 @@ public class World {
    * @param componentRegistry        stores component class / index relations
    * @param componentMapperStrategy  provides component mappers
    * @param entitySetList            the entity set list
+   * @param entityReferenceMap
    * @param entityComponentBitSetMap maps entity id's to component id flags as bitsets
    * @param eventBus                 the event bus
    * @param worldSerializer          serializes the world
@@ -122,10 +122,11 @@ public class World {
       ComponentRegistry componentRegistry,
       ComponentMapperStrategy componentMapperStrategy,
       List<EntitySetInternal> entitySetList,
+      Map<Long, Reference<EntityInternal>> entityReferenceMap,
       Map<Long, BitSet> entityComponentBitSetMap,
       EventBus eventBus,
       WorldSerializer worldSerializer,
-      HashIntObjMap<Map<Long, Component>> componentsByTypeIndexMap,
+      Map<Integer, Map<Long, Component>> componentsByTypeIndexMap,
       SystemFieldInjector systemFieldInjector,
       EntityReferenceStrategy entityReferenceStrategy,
       long[] nextEntityId
@@ -140,9 +141,7 @@ public class World {
     this.entityReferenceStrategy = entityReferenceStrategy;
     this.nextEntityId = nextEntityId;
 
-    this.entityMap = HashLongObjMaps
-        .getDefaultFactory()
-        .newUpdatableMap();
+    this.entityReferenceMap = entityReferenceMap;
 
     this.entityComponentBitSetMap = entityComponentBitSetMap;
 
@@ -303,7 +302,7 @@ public class World {
 
       long id = entity.getId();
 
-      this.entityMap.remove(id);
+      this.entityReferenceMap.remove(id);
 
       BitSet bitSet = this.entityComponentBitSetMap.remove(id);
 
@@ -350,9 +349,7 @@ public class World {
         entityComponentMap = this.componentsByTypeIndexMap
             .computeIfAbsent(
                 componentType.getIndex(),
-                k -> HashLongObjMaps
-                    .getDefaultFactory()
-                    .newUpdatableMap()
+                k -> EntityIdComponentMap.withExpectedSize(32)
             );
 
         entityComponentMap.put(entityReference.getId(), component);

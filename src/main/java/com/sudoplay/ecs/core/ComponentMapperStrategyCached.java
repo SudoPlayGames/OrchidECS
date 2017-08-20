@@ -4,8 +4,7 @@ import com.sudoplay.ecs.integration.api.ComponentMapper;
 import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentMapperStrategy;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
-import net.openhft.koloboke.collect.map.hash.HashLongObjMaps;
-import net.openhft.koloboke.collect.map.hash.HashObjObjMap;
+import com.sudoplay.ecs.koloboke.EntityIdComponentMap;
 
 import java.util.Map;
 
@@ -18,7 +17,7 @@ public class ComponentMapperStrategyCached implements
 
   /* package */ ComponentMapperStrategyCached(
       Map<Integer, Map<Long, Component>> componentsByTypeIndexMap,
-      HashObjObjMap<Class<? extends Component>, ComponentMapper<? extends Component>> componentMapperMap,
+      Map<Class<? extends Component>, ComponentMapper<? extends Component>> componentMapperMap,
       ComponentRegistry componentRegistry
   ) {
 
@@ -45,8 +44,7 @@ public class ComponentMapperStrategyCached implements
 
     entityIdComponentMap = this.componentsByTypeIndexMap.computeIfAbsent(
         componentIndex,
-        k -> HashLongObjMaps.getDefaultFactory()
-            .newUpdatableMap()
+        k -> EntityIdComponentMap.withExpectedSize(this.componentRegistry.componentCountGet())
     );
 
     componentMapper = this.componentMapperMap.computeIfAbsent(

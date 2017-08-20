@@ -9,6 +9,8 @@ public class AspectDefault implements
   private BitSet excludeSet;
   private BitSet oneSet;
 
+  private volatile int hash;
+
   /* package */ AspectDefault(
       BitSet allSet,
       BitSet excludeSet,
@@ -66,9 +68,15 @@ public class AspectDefault implements
   @Override
   public int hashCode() {
 
-    int result = this.allSet.hashCode();
-    result = 31 * result + this.excludeSet.hashCode();
-    result = 31 * result + this.oneSet.hashCode();
+    int result = this.hash;
+
+    if (result == 0) {
+      result = this.allSet.hashCode();
+      result = 31 * result + this.excludeSet.hashCode();
+      result = 31 * result + this.oneSet.hashCode();
+      this.hash = result;
+    }
+
     return result;
   }
 

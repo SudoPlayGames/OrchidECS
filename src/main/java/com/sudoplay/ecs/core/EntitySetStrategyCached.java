@@ -1,7 +1,6 @@
 package com.sudoplay.ecs.core;
 
-import net.openhft.koloboke.collect.map.hash.HashObjObjMaps;
-
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +30,7 @@ public class EntitySetStrategyCached implements
 
     this.aspectEntitySetFactory = aspectEntitySetFactory;
 
-    this.aspectEntitySetByAspectMap = HashObjObjMaps.getDefaultFactory()
-        .newUpdatableMap();
+    this.aspectEntitySetByAspectMap = new HashMap<>();
 
     this.entitySetList = entitySetList;
   }
