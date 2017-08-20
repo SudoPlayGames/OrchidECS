@@ -5,7 +5,7 @@ import com.sudoplay.ecs.integration.api.Subscribe;
 import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.integration.spi.EntityEventBase;
-import net.openhft.koloboke.collect.map.hash.HashObjObjMaps;
+import com.sudoplay.ecs.koloboke.ClassObjectMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,11 +103,8 @@ import java.util.*;
     this.componentRegistry = componentRegistry;
     this.entitySetStrategy = entitySetStrategy;
 
-    this.aspectDispatchByAspectMap = HashObjObjMaps.getDefaultFactory()
-        .newUpdatableMap();
-
-    this.aspectDispatchListByEntityEventMap = HashObjObjMaps.getDefaultFactory()
-        .newUpdatableMap();
+    this.aspectDispatchByAspectMap = new HashMap<>();
+    this.aspectDispatchListByEntityEventMap = ClassObjectMap.withExpectedSize(64);
 
     this.subscriberList = new ArrayList<>();
   }

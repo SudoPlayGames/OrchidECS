@@ -3,11 +3,10 @@ package com.sudoplay.ecs.core;
 import com.sudoplay.ecs.integration.api.ComponentRegistrationException;
 import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
-import net.openhft.koloboke.collect.map.hash.HashIntObjMaps;
-import net.openhft.koloboke.collect.map.hash.HashObjObjMaps;
+import com.sudoplay.ecs.koloboke.ClassObjectMap;
+import com.sudoplay.ecs.koloboke.ComponentIdComponentTypeMap;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 public class ComponentRegistryDefault implements
@@ -20,10 +19,8 @@ public class ComponentRegistryDefault implements
   public ComponentRegistryDefault() {
 
     this.nextAvailableId = 0;
-    this.classComponentTypeMap = HashObjObjMaps.getDefaultFactory()
-        .newUpdatableMap();
-    this.indexComponentTypeMap = HashIntObjMaps.getDefaultFactory()
-        .newUpdatableMap();
+    this.classComponentTypeMap = ClassObjectMap.withExpectedSize(64);
+    this.indexComponentTypeMap = ComponentIdComponentTypeMap.withExpectedSize(64);
   }
 
   @Override

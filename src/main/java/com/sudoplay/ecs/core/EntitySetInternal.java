@@ -2,7 +2,7 @@ package com.sudoplay.ecs.core;
 
 import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.api.EntitySet;
-import net.openhft.koloboke.collect.map.hash.HashLongObjMaps;
+import com.sudoplay.ecs.koloboke.EntityIdEntityMap;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
@@ -30,9 +30,7 @@ public class EntitySetInternal implements
     this.entityComponentBitSetMap = entityComponentBitSetMap;
     this.aspect = aspect;
 
-    this.entityMap = HashLongObjMaps
-        .getDefaultFactory()
-        .newUpdatableMap();
+    this.entityMap = EntityIdEntityMap.withExpectedSize(entityComponentBitSetMap.size());
 
     this.eventHandlerAddList = new ArrayList<>();
     this.eventHandlerRemoveList = new ArrayList<>();

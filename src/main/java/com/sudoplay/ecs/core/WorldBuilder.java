@@ -5,9 +5,10 @@ import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentMapperStrategy;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.integration.spi.WorldSerializer;
+import com.sudoplay.ecs.koloboke.ComponentId_EntityIdComponentMap_Map;
+import com.sudoplay.ecs.koloboke.EntityIdBitSetMap;
+import com.sudoplay.ecs.koloboke.EntityIdReferenceMap;
 import com.sudoplay.ecs.util.ClassFieldIterator;
-import net.openhft.koloboke.collect.Equivalence;
-import net.openhft.koloboke.collect.map.hash.*;
 
 import java.lang.ref.Reference;
 import java.util.*;
@@ -118,9 +119,8 @@ public class WorldBuilder {
 
     // used for quick comparison of an entity's component composition against
     // an aspect for entity sets
-    HashLongObjMap<BitSet> entityComponentBitSetMap = HashLongObjMaps
-        .getDefaultFactory()
-        .newUpdatableMap();
+    Map<Long, BitSet> entityComponentBitSetMap = EntityIdBitSetMap
+        .withExpectedSize(1024);
 
     // entity set list for iteration
     LinkedList<EntitySetInternal> entitySetList = new LinkedList<>();
@@ -136,23 +136,19 @@ public class WorldBuilder {
     // used as on observable long
     long[] nextEntityId = new long[1];
 
-    HashIntObjMap<Map<Long, Component>>
-        componentsByTypeIndexMap = HashIntObjMaps.getDefaultFactory()
-        .newUpdatableMap();
+    Map<Integer, Map<Long, Component>> componentsByTypeIndexMap = ComponentId_EntityIdComponentMap_Map
+        .withExpectedSize(256);
 
     // creates and retains component mappers
     ComponentMapperStrategy componentMapperStrategy = new ComponentMapperStrategyCached(
         componentsByTypeIndexMap,
-        HashObjObjMaps.getDefaultFactory()
-            .withKeyEquivalence(Equivalence.identity())
-            .newUpdatableMap(),
+        new HashMap<>(),
         this.componentRegistry
     );
 
     // stores references to entity references
-    Map<Long, Reference<EntityInternal>>
-        entityReferenceMap = HashLongObjMaps.getDefaultFactory()
-        .newUpdatableMap();
+    Map<Long, Reference<EntityInternal>> entityReferenceMap = EntityIdReferenceMap
+        .withExpectedSize(1024);
 
     // aspect filtered priority entity event bus
     EventBus eventBus = new EventBus(
@@ -179,6 +175,7 @@ public class WorldBuilder {
         this.componentRegistry,
         componentMapperStrategy,
         entitySetList,
+        entityReferenceMap,
         entityComponentBitSetMap,
         eventBus,
         this.worldSerializer,
