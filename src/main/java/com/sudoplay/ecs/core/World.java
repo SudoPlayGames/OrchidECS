@@ -231,6 +231,8 @@ public class World {
 
   /**
    * Add a component to an entity.
+   * <p>
+   * Note: Only add components created by calling {@link World#componentCreate(Class)}.
    *
    * @param entityReference the entity
    * @param component       the component
@@ -287,14 +289,14 @@ public class World {
   // -- Event
   // --------------------------------------------------------------------------
 
-  public void registerSystem(Object subscriber) {
+  public void eventSubscribe(Object subscriber) {
 
     this.eventBus.subscribe(subscriber);
     this.systemFieldInjector.inject(subscriber);
 
   }
 
-  public void publish(EntityEventBase event) {
+  public void eventPublish(EntityEventBase event) {
 
     this.eventBus.publish(event);
   }
@@ -434,12 +436,12 @@ public class World {
   // -- Serialization
   // --------------------------------------------------------------------------
 
-  public void setWorldSerializer(WorldSerializer worldSerializer) {
+  public void serializerSet(WorldSerializer worldSerializer) {
 
     this.worldSerializer = worldSerializer;
   }
 
-  public void write(WorldWriter out) {
+  public void serializerWrite(WorldWriter out) {
 
     if (this.worldSerializer != null) {
       this.worldSerializer.write(
@@ -450,7 +452,7 @@ public class World {
     }
   }
 
-  public void read(WorldReader in) {
+  public void serializerRead(WorldReader in) {
 
     if (this.worldSerializer != null) {
       this.worldSerializer.read(
