@@ -26,6 +26,15 @@ public class WorldBuilder {
     this.systemList = new LinkedList<Object>();
   }
 
+  public <C extends Component> WorldBuilder registerComponents(final Class<C>... componentClasses) {
+
+    for (Class<C> componentClass : componentClasses) {
+      this.registerComponent(componentClass);
+    }
+
+    return this;
+  }
+
   public <C extends Component> WorldBuilder registerComponent(final Class<C> componentClass) {
 
     return this.registerComponent(componentClass, new ObjectPool.Factory<C>() {
@@ -47,7 +56,7 @@ public class WorldBuilder {
   }
 
   /**
-   * Register all components for this world here.
+   * Register a component and its associated factory.
    *
    * @param componentClass the component class
    * @param factory        the component factory
