@@ -33,7 +33,7 @@ public class EventHandlerTest {
 
     world.update();
 
-    world.publish(new PriorityTestEvent(entity));
+    world.eventPublish(new PriorityTestEvent(entity));
 
     Assert.assertEquals("Priority 1", system.resultList.get(0));
     Assert.assertEquals("Priority 0", system.resultList.get(1));
@@ -134,9 +134,9 @@ public class EventHandlerTest {
 
     world.update();
 
-    world.publish(new ComponentFilterTestEvent(entityA));
-    world.publish(new ComponentFilterTestEvent(entityB));
-    world.publish(new ComponentFilterTestEvent(entityAB));
+    world.eventPublish(new ComponentFilterTestEvent(entityA));
+    world.eventPublish(new ComponentFilterTestEvent(entityB));
+    world.eventPublish(new ComponentFilterTestEvent(entityAB));
 
   }
 
@@ -182,7 +182,7 @@ public class EventHandlerTest {
 
   }
 
-  static class ComponentA
+  public static class ComponentA
       implements Component {
 
     String name;
@@ -194,15 +194,10 @@ public class EventHandlerTest {
     }
   }
 
-  static class ComponentB
+  public static class ComponentB
       implements Component {
 
     String name;
-
-    public ComponentB(String name) {
-
-      this.name = name;
-    }
 
     @Override
     public void reset() {

@@ -253,7 +253,7 @@ public class WorldBuilder {
     systemFieldInjector.setWorld(world);
 
     for (Object system : this.systemList) {
-      world.registerSystem(system);
+      world.eventSubscribe(system);
     }
 
     return world;
