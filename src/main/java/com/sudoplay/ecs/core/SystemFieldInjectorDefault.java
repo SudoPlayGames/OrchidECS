@@ -5,17 +5,12 @@ import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentMapperStrategy;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.util.ClassFieldIterator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 
 public class SystemFieldInjectorDefault
     implements
     SystemFieldInjector {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(
-      SystemFieldInjectorDefault.class);
 
   private ComponentRegistry componentRegistry;
   private EntitySetStrategy entitySetStrategy;
@@ -82,11 +77,12 @@ public class SystemFieldInjectorDefault
         );
 
       } catch (IllegalAccessException e) {
-        LOGGER.error(
-            "Unable to inject field [{}] in class [{}]",
-            field,
-            objectToInject.getClass(),
-            e
+        throw new RuntimeException(
+            String.format(
+                "Unable to inject field [%s] in class [%s]",
+                field,
+                objectToInject.getClass()
+            ), e
         );
       }
 
@@ -115,11 +111,12 @@ public class SystemFieldInjectorDefault
         );
 
       } catch (IllegalAccessException e) {
-        LOGGER.error(
-            "Unable to inject field [{}] in class [{}]",
-            field,
-            objectToInject.getClass(),
-            e
+        throw new RuntimeException(
+            String.format(
+                "Unable to inject field [%s] in class [%s]",
+                field,
+                objectToInject.getClass()
+            ), e
         );
       }
 
@@ -154,11 +151,12 @@ public class SystemFieldInjectorDefault
         );
 
       } catch (IllegalAccessException e) {
-        LOGGER.error(
-            "Unable to inject field [{}] in class [{}]",
-            field,
-            objectToInject.getClass(),
-            e
+        throw new RuntimeException(
+            String.format(
+                "Unable to inject field [%s] in class [%s]",
+                field,
+                objectToInject.getClass()
+            ), e
         );
       }
 

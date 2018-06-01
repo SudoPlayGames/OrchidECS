@@ -4,15 +4,10 @@ import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.integration.spi.EntityReferenceStrategy;
 import com.sudoplay.ecs.util.LongMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EntityReferenceStrategyDefault
     implements
     EntityReferenceStrategy {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(
-      EntityReferenceStrategyDefault.class);
 
   private long[] nextEntityId;
   private ComponentRegistry componentRegistry;
@@ -71,8 +66,6 @@ public class EntityReferenceStrategyDefault
 
       // use up an id
       this.nextEntityId[0] += 1;
-
-      LOGGER.debug("Created entity [{}]", entity);
 
       return entity;
 

@@ -2,8 +2,6 @@ package com.sudoplay.ecs.core;
 
 import com.sudoplay.ecs.integration.api.EntitySet;
 import com.sudoplay.ecs.integration.spi.EntityEventBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -12,8 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 
 /* package */ class AspectDispatch {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(AspectDispatch.class);
 
   private EntitySet entitySet;
   private List<EventBus.Subscriber> subscriberList;
@@ -64,10 +60,10 @@ import java.util.List;
           }
 
         } catch (InvocationTargetException e) {
-          LOGGER.error("Unable to invoke subscriber [{}]", subscriber, e);
+          throw new RuntimeException(String.format("Unable to invoke subscriber [%s]", subscriber), e);
 
         } catch (IllegalAccessException e) {
-          LOGGER.error("Unable to invoke subscriber [{}]", subscriber, e);
+          throw new RuntimeException(String.format("Unable to invoke subscriber [%s]", subscriber), e);
         }
 
       }

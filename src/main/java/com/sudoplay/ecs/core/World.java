@@ -5,14 +5,10 @@ import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.spi.*;
 import com.sudoplay.ecs.util.IntMap;
 import com.sudoplay.ecs.util.LongMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class World {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(World.class);
 
   /**
    * Components are referenced by component type index and entity id.

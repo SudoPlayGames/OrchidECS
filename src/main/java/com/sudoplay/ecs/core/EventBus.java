@@ -5,8 +5,6 @@ import com.sudoplay.ecs.integration.api.Subscribe;
 import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.integration.spi.EntityEventBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
@@ -14,8 +12,6 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /* package */ class EventBus {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(EventBus.class);
 
   /* package */ static class Subscriber {
 
@@ -241,19 +237,21 @@ import java.util.*;
         subscriber.invoke(event);
 
       } catch (InvocationTargetException e) {
-        LOGGER.error(
-            "Unable to publish event [{}] to subscriber [{}]",
-            event,
-            subscriber,
-            e
+        throw new RuntimeException(
+            String.format(
+                "Unable to publish event [%s] to subscriber [%s]",
+                event,
+                subscriber
+            ), e
         );
 
       } catch (IllegalAccessException e) {
-        LOGGER.error(
-            "Unable to publish event [{}] to subscriber [{}]",
-            event,
-            subscriber,
-            e
+        throw new RuntimeException(
+            String.format(
+                "Unable to publish event [%s] to subscriber [%s]",
+                event,
+                subscriber
+            ), e
         );
       }
     }
