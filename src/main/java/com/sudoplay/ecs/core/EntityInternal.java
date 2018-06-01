@@ -1,19 +1,28 @@
 package com.sudoplay.ecs.core;
 
 import com.sudoplay.ecs.integration.api.Entity;
+import com.sudoplay.ecs.integration.api.Poolable;
 import com.sudoplay.ecs.integration.spi.Component;
 
-public class EntityInternal implements
-    Entity {
+public class EntityInternal
+    implements Entity,
+    Poolable {
 
-  private final long id;
+  private long id;
   private World world;
 
-  /* package */ EntityInternal(
+  /* package */ void init(
       long id
   ) {
 
     this.id = id;
+  }
+
+  @Override
+  public void reset() {
+
+    this.id = Long.MIN_VALUE;
+    this.world = null;
   }
 
   /**

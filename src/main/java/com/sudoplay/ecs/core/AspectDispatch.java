@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -22,7 +23,7 @@ import java.util.List;
   ) {
 
     this.entitySet = entitySet;
-    this.subscriberList = new ArrayList<>();
+    this.subscriberList = new ArrayList<EventBus.Subscriber>();
   }
 
   /* package */ void subscribe(
@@ -35,7 +36,7 @@ import java.util.List;
 
   private void sortSubscriberList() {
 
-    this.subscriberList.sort(EventBus.Subscriber.PRIORITY_SORT);
+    Collections.sort(this.subscriberList, EventBus.Subscriber.PRIORITY_SORT);
   }
 
   /* package */ void publish(
@@ -62,7 +63,10 @@ import java.util.List;
             break;
           }
 
-        } catch (InvocationTargetException | IllegalAccessException e) {
+        } catch (InvocationTargetException e) {
+          LOGGER.error("Unable to invoke subscriber [{}]", subscriber, e);
+
+        } catch (IllegalAccessException e) {
           LOGGER.error("Unable to invoke subscriber [{}]", subscriber, e);
         }
 

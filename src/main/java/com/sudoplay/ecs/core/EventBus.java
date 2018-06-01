@@ -5,7 +5,6 @@ import com.sudoplay.ecs.integration.api.Subscribe;
 import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.integration.spi.EntityEventBase;
-import com.sudoplay.ecs.koloboke.ClassObjectMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +19,14 @@ import java.util.*;
 
   /* package */ static class Subscriber {
 
-    /* package */ static final Comparator<Subscriber> PRIORITY_SORT = Comparator.comparingInt(
-        Subscriber::getPriority)
-        .reversed();
+    /* package */ static final Comparator<Subscriber> PRIORITY_SORT = new Comparator<Subscriber>() {
+
+      @Override
+      public int compare(Subscriber o1, Subscriber o2) {
+
+        return (o1.priority > o2.priority) ? -1 : ((o1.priority == o2.priority) ? 0 : 1);
+      }
+    };
 
     private int priority;
     private Method method;
@@ -36,7 +40,7 @@ import java.util.*;
 
       this.priority = priority;
       this.method = method;
-      this.subscriberReference = new WeakReference<>(subscriberReference);
+      this.subscriberReference = new WeakReference<Object>(subscriberReference);
     }
 
     /* package */ int getPriority() {
@@ -103,10 +107,10 @@ import java.util.*;
     this.componentRegistry = componentRegistry;
     this.entitySetStrategy = entitySetStrategy;
 
-    this.aspectDispatchByAspectMap = new HashMap<>();
-    this.aspectDispatchListByEntityEventMap = ClassObjectMap.withExpectedSize(64);
+    this.aspectDispatchByAspectMap = new HashMap<Aspect, AspectDispatch>();
+    this.aspectDispatchListByEntityEventMap = new HashMap<Class<? extends EntityEventBase>, List<AspectDispatch>>(64);
 
-    this.subscriberList = new ArrayList<>();
+    this.subscriberList = new ArrayList<Subscriber>();
   }
 
   /* package */ void subscribe(Object subscribingObject) {
@@ -121,7 +125,7 @@ import java.util.*;
 
     for (Method method : declaredMethods) {
 
-      if (method.getParameterCount() != 1) {
+      if (method.getParameterTypes().length != 1) {
         continue;
       }
 
@@ -159,10 +163,9 @@ import java.util.*;
 
         // subscribe to the 'all entity events' external bus
         this.subscriberList.add(subscriber);
-        this.subscriberList.sort(Subscriber.PRIORITY_SORT);
+        Collections.sort(this.subscriberList, Subscriber.PRIORITY_SORT);
 
         continue;
-
       }
 
       Aspect aspect = new AspectBuilder(this.componentRegistry)
@@ -190,21 +193,18 @@ import java.util.*;
         // store the dispatch
         this.aspectDispatchByAspectMap.put(aspect, dispatch);
 
-        List<AspectDispatch> list;
+        List<AspectDispatch> list = this.aspectDispatchListByEntityEventMap.get(eventClass);
 
-        list = this.aspectDispatchListByEntityEventMap.computeIfAbsent(
-            eventClass,
-            k -> new ArrayList<>()
-        );
+        if (list == null) {
+          list = new ArrayList<AspectDispatch>();
+          this.aspectDispatchListByEntityEventMap.put(eventClass, list);
+        }
 
         list.add(dispatch);
-
       }
 
       dispatch.subscribe(subscriber);
-
     }
-
   }
 
   /* package */ void publish(EntityEventBase event) {
@@ -222,9 +222,7 @@ import java.util.*;
       for (AspectDispatch dispatch : aspectDispatchList) {
         dispatch.publish(event);
       }
-
     }
-
   }
 
   private void publishToAll(EntityEventBase event) {
@@ -242,7 +240,15 @@ import java.util.*;
       try {
         subscriber.invoke(event);
 
-      } catch (InvocationTargetException | IllegalAccessException e) {
+      } catch (InvocationTargetException e) {
+        LOGGER.error(
+            "Unable to publish event [{}] to subscriber [{}]",
+            event,
+            subscriber,
+            e
+        );
+
+      } catch (IllegalAccessException e) {
         LOGGER.error(
             "Unable to publish event [{}] to subscriber [{}]",
             event,

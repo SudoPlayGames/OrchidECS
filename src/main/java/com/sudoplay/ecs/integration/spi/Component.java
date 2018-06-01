@@ -1,6 +1,9 @@
 package com.sudoplay.ecs.integration.spi;
 
-public interface Component {
+import com.sudoplay.ecs.integration.api.Poolable;
+
+public interface Component
+    extends Poolable {
 
   //
 

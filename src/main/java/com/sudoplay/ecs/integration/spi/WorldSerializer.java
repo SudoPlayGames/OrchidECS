@@ -1,13 +1,13 @@
 package com.sudoplay.ecs.integration.spi;
 
 import com.sudoplay.ecs.core.World;
-
-import java.util.Map;
+import com.sudoplay.ecs.util.IntMap;
+import com.sudoplay.ecs.util.LongMap;
 
 public interface WorldSerializer {
 
   void write(
-      Map<Integer, Map<Long, Component>> componentsByTypeIndexMap,
+      IntMap<LongMap<Component>> componentsByTypeIndexMap,
       WorldWriter out,
       long[] nextEntityId
   );

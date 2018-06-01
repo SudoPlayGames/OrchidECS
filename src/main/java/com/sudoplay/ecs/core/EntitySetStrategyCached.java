@@ -5,8 +5,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class EntitySetStrategyCached implements
-    EntitySetStrategy {
+public class EntitySetStrategyCached
+    implements EntitySetStrategy {
 
   /**
    * Provides aspect entity sets when requested.
@@ -30,7 +30,7 @@ public class EntitySetStrategyCached implements
 
     this.aspectEntitySetFactory = aspectEntitySetFactory;
 
-    this.aspectEntitySetByAspectMap = new HashMap<>();
+    this.aspectEntitySetByAspectMap = new HashMap<Aspect, EntitySetInternal>();
 
     this.entitySetList = entitySetList;
   }
@@ -38,17 +38,17 @@ public class EntitySetStrategyCached implements
   @Override
   public EntitySetInternal getEntitySet(Aspect aspect) {
 
-    return this.aspectEntitySetByAspectMap.computeIfAbsent(
-        aspect,
-        a -> {
-          // create a new aspect entity set and add it to the local list
-          EntitySetInternal newEntitySet = this.aspectEntitySetFactory
-              .createAspectEntitySet(a);
-          this.entitySetList.add(newEntitySet);
-          return newEntitySet;
-        }
-    );
+    EntitySetInternal entitySetInternal = this.aspectEntitySetByAspectMap.get(aspect);
 
+    if (entitySetInternal == null) {
+      // create a new aspect entity set and add it to the local list
+      EntitySetInternal newEntitySet = this.aspectEntitySetFactory
+          .createAspectEntitySet(aspect);
+      this.entitySetList.add(newEntitySet);
+      this.aspectEntitySetByAspectMap.put(aspect, newEntitySet);
+    }
+
+    return entitySetInternal;
   }
 
 }

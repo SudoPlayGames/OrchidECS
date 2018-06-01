@@ -1,13 +1,14 @@
 package com.sudoplay.ecs.integration.api;
 
+import com.sudoplay.ecs.util.LongMap;
+
 import java.util.Deque;
-import java.util.function.Consumer;
 
 public interface EntitySet {
 
   boolean contains(Entity entity);
 
-  void forEach(Consumer<Entity> consumer);
+  LongMap.Values<Entity> entitiesGet();
 
   Deque<Entity> newDequeEventEntityAdd();
 

@@ -8,4 +8,5 @@ public interface EntityReferenceStrategy {
 
   Entity entityGet(long entityId);
 
+  void reclaim(Entity entity);
 }

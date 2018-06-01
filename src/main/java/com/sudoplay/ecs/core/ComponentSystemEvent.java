@@ -1,20 +1,22 @@
 package com.sudoplay.ecs.core;
 
 import com.sudoplay.ecs.integration.api.Entity;
+import com.sudoplay.ecs.integration.api.Poolable;
 import com.sudoplay.ecs.integration.spi.Component;
 
-public class ComponentSystemEvent {
+public class ComponentSystemEvent
+    implements Poolable {
 
   public enum EventType {
     ADD, REMOVE
   }
 
-  private final EventType eventType;
-  private final EntityInternal entityReference;
-  private final ComponentType componentType;
-  private final Component component;
+  private EventType eventType;
+  private EntityInternal entityReference;
+  private ComponentType componentType;
+  private Component component;
 
-  public ComponentSystemEvent(
+  public ComponentSystemEvent init(
       EventType eventType,
       EntityInternal entityReference,
       ComponentType componentType,
@@ -25,6 +27,7 @@ public class ComponentSystemEvent {
     this.entityReference = entityReference;
     this.componentType = componentType;
     this.component = component;
+    return this;
   }
 
   public EventType getEventType() {
@@ -50,6 +53,15 @@ public class ComponentSystemEvent {
   public Component getComponent() {
 
     return this.component;
+  }
+
+  @Override
+  public void reset() {
+
+    this.eventType = null;
+    this.entityReference = null;
+    this.componentType = null;
+    this.component = null;
   }
 
   @Override

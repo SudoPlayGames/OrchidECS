@@ -25,7 +25,6 @@ public class EventHandlerTest {
     SystemEventHandlerPriorityTest system = new SystemEventHandlerPriorityTest();
 
     World world = new WorldBuilder()
-        .registerComponents()
         .registerSystems(system)
         .create();
 
@@ -48,7 +47,7 @@ public class EventHandlerTest {
 
     SystemEventHandlerPriorityTest() {
 
-      this.resultList = new ArrayList<>();
+      this.resultList = new ArrayList<String>();
     }
 
     @Subscribe
@@ -71,7 +70,8 @@ public class EventHandlerTest {
 
   }
 
-  static class PriorityTestEvent extends
+  static class PriorityTestEvent
+      extends
       EntityEventBase {
 
     PriorityTestEvent(Entity entity) {
@@ -91,27 +91,46 @@ public class EventHandlerTest {
 
     World world = new WorldBuilder()
         .registerSystems(system)
-        .registerComponents(ComponentA.class, ComponentB.class)
+        .registerComponent(ComponentA.class)
+        .registerComponent(ComponentB.class)
         .create();
 
     Entity entityA;
+    {
+      ComponentA componentA;
 
-    entityA = world.entityCreate();
-    entityA.componentAdd(new ComponentA("A"));
-    entityA.worldAdd();
+      entityA = world.entityCreate();
+      componentA = world.componentCreate(ComponentA.class);
+      componentA.name = "A";
+      entityA.componentAdd(componentA);
+      entityA.worldAdd();
+    }
 
     Entity entityB;
+    {
+      ComponentB componentB;
 
-    entityB = world.entityCreate();
-    entityB.componentAdd(new ComponentB("B"));
-    entityB.worldAdd();
+      entityB = world.entityCreate();
+      componentB = world.componentCreate(ComponentB.class);
+      componentB.name = "B";
+      entityB.componentAdd(componentB);
+      entityB.worldAdd();
+    }
 
     Entity entityAB;
+    {
+      ComponentA componentA;
+      ComponentB componentB;
 
-    entityAB = world.entityCreate();
-    entityAB.componentAdd(new ComponentA("AB"));
-    entityAB.componentAdd(new ComponentB("AB"));
-    entityAB.worldAdd();
+      entityAB = world.entityCreate();
+      componentA = world.componentCreate(ComponentA.class);
+      componentA.name = "AB";
+      entityAB.componentAdd(componentA);
+      componentB = world.componentCreate(ComponentB.class);
+      componentB.name = "AB";
+      entityAB.componentAdd(componentB);
+      entityAB.worldAdd();
+    }
 
     world.update();
 
@@ -152,7 +171,8 @@ public class EventHandlerTest {
 
   }
 
-  static class ComponentFilterTestEvent extends
+  static class ComponentFilterTestEvent
+      extends
       EntityEventBase {
 
     ComponentFilterTestEvent(Entity entity) {
@@ -162,25 +182,32 @@ public class EventHandlerTest {
 
   }
 
-  static class ComponentA implements
-      Component {
+  static class ComponentA
+      implements Component {
 
     String name;
 
-    public ComponentA(String name) {
+    @Override
+    public void reset() {
 
-      this.name = name;
+      this.name = null;
     }
   }
 
-  static class ComponentB implements
-      Component {
+  static class ComponentB
+      implements Component {
 
     String name;
 
     public ComponentB(String name) {
 
       this.name = name;
+    }
+
+    @Override
+    public void reset() {
+
+      this.name = null;
     }
   }
 

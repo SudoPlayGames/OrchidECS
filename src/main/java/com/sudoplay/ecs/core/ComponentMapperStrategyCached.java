@@ -4,19 +4,21 @@ import com.sudoplay.ecs.integration.api.ComponentMapper;
 import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentMapperStrategy;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
-import com.sudoplay.ecs.koloboke.EntityIdComponentMap;
+import com.sudoplay.ecs.util.IntMap;
+import com.sudoplay.ecs.util.LongMap;
 
 import java.util.Map;
 
-public class ComponentMapperStrategyCached implements
+public class ComponentMapperStrategyCached
+    implements
     ComponentMapperStrategy {
 
-  private Map<Integer, Map<Long, Component>> componentsByTypeIndexMap;
+  private IntMap<LongMap<Component>> componentsByTypeIndexMap;
   private Map<Class<? extends Component>, ComponentMapper<? extends Component>> componentMapperMap;
   private ComponentRegistry componentRegistry;
 
   /* package */ ComponentMapperStrategyCached(
-      Map<Integer, Map<Long, Component>> componentsByTypeIndexMap,
+      IntMap<LongMap<Component>> componentsByTypeIndexMap,
       Map<Class<? extends Component>, ComponentMapper<? extends Component>> componentMapperMap,
       ComponentRegistry componentRegistry
   ) {
@@ -36,24 +38,30 @@ public class ComponentMapperStrategyCached implements
       Class<C> componentClass
   ) {
 
-    ComponentMapper<? extends Component> componentMapper;
+    ComponentMapper<C> componentMapper;
     int componentIndex;
-    Map<Long, Component> entityIdComponentMap;
+    LongMap<Component> entityIdComponentMap;
 
     componentIndex = this.componentRegistry.componentTypeIndexGet(componentClass);
 
-    entityIdComponentMap = this.componentsByTypeIndexMap.computeIfAbsent(
-        componentIndex,
-        k -> EntityIdComponentMap.withExpectedSize(this.componentRegistry.componentCountGet())
-    );
+    entityIdComponentMap = this.componentsByTypeIndexMap.get(componentIndex);
 
-    componentMapper = this.componentMapperMap.computeIfAbsent(
-        componentClass,
-        k -> new ComponentMapperDefault<>(componentClass, entityIdComponentMap)
-    );
+    if (entityIdComponentMap == null) {
+      entityIdComponentMap = new LongMap<Component>(this.componentRegistry.componentCountGet());
+      this.componentsByTypeIndexMap.put(componentIndex, entityIdComponentMap);
+    }
 
     //noinspection unchecked
-    return (ComponentMapper<C>) componentMapper;
+    componentMapper = (ComponentMapper<C>) this.componentMapperMap.get(componentClass);
+
+    if (componentMapper == null) {
+      //noinspection unchecked
+      componentMapper = new ComponentMapperDefault<C>(componentClass, (LongMap<C>) entityIdComponentMap);
+      this.componentMapperMap.put(componentClass, componentMapper);
+    }
+
+    //noinspection unchecked
+    return componentMapper;
   }
 
 }

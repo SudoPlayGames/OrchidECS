@@ -10,7 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 
-public class SystemFieldInjectorDefault implements
+public class SystemFieldInjectorDefault
+    implements
     SystemFieldInjector {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(
@@ -41,26 +42,28 @@ public class SystemFieldInjectorDefault implements
   }
 
   @Override
-  public void inject(Object objectToInject) {
+  public void inject(final Object objectToInject) {
 
-    this.classFieldIterator.doWithFields(objectToInject.getClass(), field -> {
+    this.classFieldIterator.doWithFields(objectToInject.getClass(), new ClassFieldIterator.IFieldConsumer() {
 
-      if (field.getType() == EntitySet.class) {
+      @Override
+      public void accept(Field field) {
 
-        this.injectEntitySets(objectToInject, field);
+        if (field.getType() == EntitySet.class) {
 
-      } else if (field.getType() == ComponentMapper.class) {
+          SystemFieldInjectorDefault.this.injectEntitySets(objectToInject, field);
 
-        this.injectComponentMappers(objectToInject, field);
+        } else if (field.getType() == ComponentMapper.class) {
 
-      } else if (field.getType() == World.class) {
+          SystemFieldInjectorDefault.this.injectComponentMappers(objectToInject, field);
 
-        this.injectWorld(objectToInject, field);
+        } else if (field.getType() == World.class) {
 
+          SystemFieldInjectorDefault.this.injectWorld(objectToInject, field);
+
+        }
       }
-
     });
-
   }
 
   private void injectWorld(Object objectToInject, Field field) {

@@ -2,38 +2,39 @@ package com.sudoplay.ecs.core;
 
 import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.api.EntitySet;
-import com.sudoplay.ecs.koloboke.EntityIdEntityMap;
+import com.sudoplay.ecs.util.LongMap;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.function.Consumer;
 
-public class EntitySetInternal implements
-    EntitySet {
+public class EntitySetInternal
+    implements EntitySet {
 
   /* package */ enum EventType {
     ADD, CHANGE, REMOVE
   }
 
-  private Map<Long, BitSet> entityComponentBitSetMap;
+  private LongMap<PooledBitSet> entityComponentBitSetMap;
   private Aspect aspect;
-  private Map<Long, Entity> entityMap;
+  private LongMap<Entity> entityMap;
   private List<Reference<Deque<Entity>>> eventHandlerAddList;
   private List<Reference<Deque<Entity>>> eventHandlerRemoveList;
+  private List<Reference<Deque<Entity>>> toRemove;
 
   /* package */ EntitySetInternal(
-      Map<Long, BitSet> entityComponentBitSetMap,
+      LongMap<PooledBitSet> entityComponentBitSetMap,
       Aspect aspect
   ) {
 
     this.entityComponentBitSetMap = entityComponentBitSetMap;
     this.aspect = aspect;
 
-    this.entityMap = EntityIdEntityMap.withExpectedSize(entityComponentBitSetMap.size());
+    this.entityMap = new LongMap<Entity>(entityComponentBitSetMap.size());
 
-    this.eventHandlerAddList = new ArrayList<>();
-    this.eventHandlerRemoveList = new ArrayList<>();
+    this.eventHandlerAddList = new ArrayList<Reference<Deque<Entity>>>();
+    this.eventHandlerRemoveList = new ArrayList<Reference<Deque<Entity>>>();
+    this.toRemove = new ArrayList<Reference<Deque<Entity>>>();
   }
 
   /* package */ void onSystemEvent(
@@ -47,12 +48,13 @@ public class EntitySetInternal implements
     boolean contains;
 
     entityId = entity.getId();
-    componentBitSet = this.entityComponentBitSetMap.get(entityId);
-    interested = this.aspect.matches(componentBitSet);
     contains = this.entityMap.containsKey(entityId);
 
     if (eventType == EventType.ADD
         || eventType == EventType.CHANGE) {
+
+      componentBitSet = this.entityComponentBitSetMap.get(entityId).getBitSet();
+      interested = this.aspect.matches(componentBitSet);
 
       if (interested && !contains) {
 
@@ -115,17 +117,16 @@ public class EntitySetInternal implements
   }
 
   @Override
-  public void forEach(Consumer<Entity> consumer) {
+  public LongMap.Values<Entity> entitiesGet() {
 
-    this.entityMap.values()
-        .forEach(consumer);
+    return this.entityMap.values();
   }
 
   @Override
   public Deque<Entity> newDequeEventEntityAdd() {
 
-    Deque<Entity> observer = new LinkedList<>();
-    this.eventHandlerAddList.add(new WeakReference<>(observer));
+    Deque<Entity> observer = new LinkedList<Entity>();
+    this.eventHandlerAddList.add(new WeakReference<Deque<Entity>>(observer));
 
     return observer;
   }
@@ -133,8 +134,8 @@ public class EntitySetInternal implements
   @Override
   public Deque<Entity> newDequeEventEntityRemove() {
 
-    Deque<Entity> observer = new LinkedList<>();
-    this.eventHandlerRemoveList.add(new WeakReference<>(observer));
+    Deque<Entity> observer = new LinkedList<Entity>();
+    this.eventHandlerRemoveList.add(new WeakReference<Deque<Entity>>(observer));
 
     return observer;
   }
@@ -144,22 +145,23 @@ public class EntitySetInternal implements
       List<Reference<Deque<Entity>>> list
   ) {
 
-    for (Iterator<Reference<Deque<Entity>>> iterator = list.iterator(); iterator.hasNext(); ) {
-
-      Reference<Deque<Entity>> ref = iterator.next();
-
+    for (int i = 0; i < list.size(); i++) {
+      Reference<Deque<Entity>> ref = list.get(i);
       Deque<Entity> eventHandler = ref.get();
 
       if (eventHandler == null) {
-        iterator.remove();
+        this.toRemove.add(ref);
         ref.clear();
         continue;
       }
 
       eventHandler.offer(entity);
-
     }
 
+    if (!this.toRemove.isEmpty()) {
+      list.removeAll(this.toRemove);
+      this.toRemove.clear();
+    }
   }
 
 }

@@ -3,24 +3,24 @@ package com.sudoplay.ecs.core;
 import com.sudoplay.ecs.integration.api.ComponentRegistrationException;
 import com.sudoplay.ecs.integration.spi.Component;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
-import com.sudoplay.ecs.koloboke.ClassObjectMap;
-import com.sudoplay.ecs.koloboke.ComponentIdComponentTypeMap;
+import com.sudoplay.ecs.util.IntMap;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
-public class ComponentRegistryDefault implements
-    ComponentRegistry {
+public class ComponentRegistryDefault
+    implements ComponentRegistry {
 
   private int nextAvailableId;
   private Map<Class<? extends Component>, ComponentType> classComponentTypeMap;
-  private Map<Integer, ComponentType> indexComponentTypeMap;
+  private IntMap<ComponentType> indexComponentTypeMap;
 
   public ComponentRegistryDefault() {
 
     this.nextAvailableId = 0;
-    this.classComponentTypeMap = ClassObjectMap.withExpectedSize(64);
-    this.indexComponentTypeMap = ComponentIdComponentTypeMap.withExpectedSize(64);
+    this.classComponentTypeMap = new HashMap<Class<? extends Component>, ComponentType>(64);
+    this.indexComponentTypeMap = new IntMap<ComponentType>(64);
   }
 
   @Override

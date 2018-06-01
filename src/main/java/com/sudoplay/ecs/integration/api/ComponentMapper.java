@@ -1,8 +1,7 @@
 package com.sudoplay.ecs.integration.api;
 
 import com.sudoplay.ecs.integration.spi.Component;
-
-import java.util.function.Consumer;
+import com.sudoplay.ecs.util.LongMap;
 
 public interface ComponentMapper<C extends Component> {
 
@@ -10,7 +9,6 @@ public interface ComponentMapper<C extends Component> {
 
   boolean has(Entity entity);
 
-  void forEach(
-      Consumer<Component> consumer
-  );
+  LongMap.Values<C> componentsGet();
+
 }

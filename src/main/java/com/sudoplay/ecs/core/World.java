@@ -3,11 +3,11 @@ package com.sudoplay.ecs.core;
 import com.sudoplay.ecs.integration.api.ComponentMapper;
 import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.spi.*;
-import com.sudoplay.ecs.koloboke.EntityIdComponentMap;
+import com.sudoplay.ecs.util.IntMap;
+import com.sudoplay.ecs.util.LongMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.ref.Reference;
 import java.util.*;
 
 public class World {
@@ -19,7 +19,7 @@ public class World {
    * <p>
    * Used to provide component mappers with a backing map.
    */
-  private Map<Integer, Map<Long, Component>> componentsByTypeIndexMap;
+  private IntMap<LongMap<Component>> componentsByTypeIndexMap;
 
   /**
    * Stores a BitSet that is used as a component mask. If an entity has a
@@ -28,14 +28,14 @@ public class World {
    * <p>
    * Used for quick comparison between an entity's components and an aspect.
    */
-  private Map<Long, BitSet> entityComponentBitSetMap;
+  private LongMap<PooledBitSet> entityComponentBitSetMap;
 
   /**
    * Stores reference to the entity objects.
    * <p>
    * This allows returning the same entity object for subsequent requests.
    */
-  private Map<Long, Reference<EntityInternal>> entityReferenceMap;
+  private LongMap<EntityInternal> entityReferenceMap;
 
   /**
    * Stores the meta information about components registered for use with
@@ -93,6 +93,11 @@ public class World {
    */
   private EntityReferenceStrategy entityReferenceStrategy;
 
+  private ObjectPool<ComponentSystemEvent> componentSystemEventObjectPool;
+
+  private ObjectPool<PooledBitSet> pooledBitSetObjectPool;
+
+  private Map<Class<? extends Component>, ObjectPool> componentPoolMap;
   /**
    * Contains the next entity id at position 0; currently only used by this
    * class during serialization
@@ -106,29 +111,35 @@ public class World {
   /**
    * World constructor.
    *
-   * @param componentRegistry        stores component class / index relations
-   * @param componentMapperStrategy  provides component mappers
-   * @param entitySetList            the entity set list
+   * @param componentRegistry              stores component class / index relations
+   * @param componentMapperStrategy        provides component mappers
+   * @param entitySetList                  the entity set list
    * @param entityReferenceMap
-   * @param entityComponentBitSetMap maps entity id's to component id flags as bitsets
-   * @param eventBus                 the event bus
-   * @param worldSerializer          serializes the world
-   * @param componentsByTypeIndexMap the entity store
-   * @param systemFieldInjector      injects system fields, entity sets and component mappers
-   * @param entityReferenceStrategy  provides entity references
-   * @param nextEntityId             the next entity id
+   * @param entityComponentBitSetMap       maps entity id's to component id flags as bitsets
+   * @param eventBus                       the event bus
+   * @param worldSerializer                serializes the world
+   * @param componentsByTypeIndexMap       the entity store
+   * @param systemFieldInjector            injects system fields, entity sets and component mappers
+   * @param entityReferenceStrategy        provides entity references
+   * @param componentSystemEventObjectPool
+   * @param pooledBitSetObjectPool
+   * @param componentPoolMap
+   * @param nextEntityId                   the next entity id
    */
   /* package */ World(
       ComponentRegistry componentRegistry,
       ComponentMapperStrategy componentMapperStrategy,
       List<EntitySetInternal> entitySetList,
-      Map<Long, Reference<EntityInternal>> entityReferenceMap,
-      Map<Long, BitSet> entityComponentBitSetMap,
+      LongMap<EntityInternal> entityReferenceMap,
+      LongMap<PooledBitSet> entityComponentBitSetMap,
       EventBus eventBus,
       WorldSerializer worldSerializer,
-      Map<Integer, Map<Long, Component>> componentsByTypeIndexMap,
+      IntMap<LongMap<Component>> componentsByTypeIndexMap,
       SystemFieldInjector systemFieldInjector,
       EntityReferenceStrategy entityReferenceStrategy,
+      ObjectPool<ComponentSystemEvent> componentSystemEventObjectPool,
+      ObjectPool<PooledBitSet> pooledBitSetObjectPool,
+      Map<Class<? extends Component>, ObjectPool> componentPoolMap,
       long[] nextEntityId
   ) {
 
@@ -139,6 +150,9 @@ public class World {
     this.componentsByTypeIndexMap = componentsByTypeIndexMap;
     this.systemFieldInjector = systemFieldInjector;
     this.entityReferenceStrategy = entityReferenceStrategy;
+    this.componentSystemEventObjectPool = componentSystemEventObjectPool;
+    this.pooledBitSetObjectPool = pooledBitSetObjectPool;
+    this.componentPoolMap = componentPoolMap;
     this.nextEntityId = nextEntityId;
 
     this.entityReferenceMap = entityReferenceMap;
@@ -148,11 +162,11 @@ public class World {
     this.componentMapperStrategy = componentMapperStrategy;
     this.componentRegistry = componentRegistry;
 
-    this.componentSystemEventQueue = new LinkedList<>();
+    this.componentSystemEventQueue = new ArrayDeque<ComponentSystemEvent>();
 
-    this.entityQueueAdded = new LinkedList<>();
-    this.entityQueueChanged = new LinkedList<>();
-    this.entityQueueRemoved = new LinkedList<>();
+    this.entityQueueAdded = new ArrayDeque<EntityInternal>();
+    this.entityQueueChanged = new ArrayDeque<EntityInternal>();
+    this.entityQueueRemoved = new ArrayDeque<EntityInternal>();
   }
 
   // --------------------------------------------------------------------------
@@ -209,6 +223,12 @@ public class World {
   // -- Component
   // --------------------------------------------------------------------------
 
+  public <C extends Component> C componentCreate(Class<C> componentClass) {
+
+    //noinspection unchecked
+    return (C) this.componentPoolMap.get(componentClass).get();
+  }
+
   /**
    * Add a component to an entity.
    *
@@ -226,7 +246,7 @@ public class World {
     componentClass = component.getClass();
     componentType = this.componentRegistry.componentTypeGet(componentClass);
 
-    this.componentSystemEventQueue.offer(new ComponentSystemEvent(
+    this.componentSystemEventQueue.offer(this.componentSystemEventObjectPool.get().init(
         ComponentSystemEvent.EventType.ADD,
         entityReference,
         componentType,
@@ -254,13 +274,12 @@ public class World {
 
     if (componentMapper.has(entityReference)) {
 
-      this.componentSystemEventQueue.offer(new ComponentSystemEvent(
+      this.componentSystemEventQueue.offer(this.componentSystemEventObjectPool.get().init(
           ComponentSystemEvent.EventType.REMOVE,
           entityReference,
           componentType,
           componentMapper.get(entityReference)
       ));
-
     }
   }
 
@@ -293,6 +312,7 @@ public class World {
 
     while ((componentSystemEvent = this.componentSystemEventQueue.poll()) != null) {
       this.processComponentEvent(componentSystemEvent);
+      this.componentSystemEventObjectPool.reclaim(componentSystemEvent);
     }
 
     EntityInternal entity;
@@ -304,22 +324,30 @@ public class World {
 
       this.entityReferenceMap.remove(id);
 
-      BitSet bitSet = this.entityComponentBitSetMap.remove(id);
+      PooledBitSet pooledBitSet = this.entityComponentBitSetMap.remove(id);
+      BitSet bitSet = pooledBitSet.getBitSet();
 
       for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-        Map<Long, Component> map = this.componentsByTypeIndexMap.get(i);
-        map.remove(id);
+        LongMap<Component> map = this.componentsByTypeIndexMap.get(i);
+        Component component = map.remove(id);
+        //noinspection unchecked
+        this.componentPoolMap.get(component.getClass()).reclaim(component);
       }
 
-      for (EntitySetInternal entitySet : this.entitySetList) {
+      for (int i = 0; i < this.entitySetList.size(); i++) {
+        EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.REMOVE);
       }
+
+      this.entityReferenceStrategy.reclaim(entity);
+      this.pooledBitSetObjectPool.reclaim(pooledBitSet);
     }
 
     // added event
     while ((entity = this.entityQueueAdded.pollFirst()) != null) {
 
-      for (EntitySetInternal entitySet : this.entitySetList) {
+      for (int i = 0; i < this.entitySetList.size(); i++) {
+        EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.ADD);
       }
     }
@@ -327,7 +355,8 @@ public class World {
     // changed event
     while ((entity = this.entityQueueChanged.pollFirst()) != null) {
 
-      for (EntitySetInternal entitySet : this.entitySetList) {
+      for (int i = 0; i < this.entitySetList.size(); i++) {
+        EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.CHANGE);
       }
     }
@@ -344,29 +373,32 @@ public class World {
     switch (eventType) {
 
       case ADD: {
-        Map<Long, Component> entityComponentMap;
+        LongMap<Component> entityComponentMap;
 
-        entityComponentMap = this.componentsByTypeIndexMap
-            .computeIfAbsent(
-                componentType.getIndex(),
-                k -> EntityIdComponentMap.withExpectedSize(32)
-            );
+        entityComponentMap = this.componentsByTypeIndexMap.get(componentType.getIndex());
+
+        if (entityComponentMap == null) {
+          entityComponentMap = new LongMap<Component>(32);
+          this.componentsByTypeIndexMap.put(componentType.getIndex(), entityComponentMap);
+        }
 
         entityComponentMap.put(entityReference.getId(), component);
 
-        BitSet bitSet = this.entityComponentBitSetMap.computeIfAbsent(
-            entityReference.getId(),
-            k -> new BitSet()
-        );
+        PooledBitSet pooledBitSet = this.entityComponentBitSetMap.get(entityReference.getId());
 
-        bitSet.set(componentType.getIndex());
+        if (pooledBitSet == null) {
+          pooledBitSet = this.pooledBitSetObjectPool.get();
+          this.entityComponentBitSetMap.put(entityReference.getId(), pooledBitSet);
+        }
+
+        pooledBitSet.getBitSet().set(componentType.getIndex());
 
         break;
       }
 
       case REMOVE: {
         int index;
-        Map<Long, Component> entityComponentMap;
+        LongMap<Component> entityComponentMap;
 
         index = componentType.getIndex();
         entityComponentMap = this.componentsByTypeIndexMap.get(index);
@@ -375,12 +407,18 @@ public class World {
           entityComponentMap.remove(entityReference.getId());
         }
 
-        BitSet bitSet = this.entityComponentBitSetMap.computeIfAbsent(
-            entityReference.getId(),
-            k -> new BitSet()
-        );
+        PooledBitSet pooledBitSet = this.entityComponentBitSetMap.get(entityReference.getId());
 
-        bitSet.clear(componentType.getIndex());
+        if (pooledBitSet == null) {
+          pooledBitSet = this.pooledBitSetObjectPool.get();
+          this.entityComponentBitSetMap.put(entityReference.getId(), pooledBitSet);
+        }
+
+        pooledBitSet.getBitSet().clear(componentType.getIndex());
+        ObjectPool componentPool = this.componentPoolMap.get(component.getClass());
+
+        //noinspection unchecked
+        componentPool.reclaim(component);
 
         break;
       }

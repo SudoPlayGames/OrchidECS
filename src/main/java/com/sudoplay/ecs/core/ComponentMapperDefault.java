@@ -3,22 +3,20 @@ package com.sudoplay.ecs.core;
 import com.sudoplay.ecs.integration.api.ComponentMapper;
 import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.spi.Component;
-
-import java.util.Map;
-import java.util.function.Consumer;
+import com.sudoplay.ecs.util.LongMap;
 
 /**
  * Used for quick access to components of a given type from the entities that own them.
  */
-public class ComponentMapperDefault<C extends Component> implements
-    ComponentMapper<C> {
+public class ComponentMapperDefault<C extends Component>
+    implements ComponentMapper<C> {
 
   private Class<C> componentClass;
-  private Map<Long, Component> entityIdComponentMap;
+  private LongMap<C> entityIdComponentMap;
 
   /* package */ ComponentMapperDefault(
       Class<C> componentClass,
-      Map<Long, Component> entityIdComponentMap
+      LongMap<C> entityIdComponentMap
   ) {
 
     this.componentClass = componentClass;
@@ -41,12 +39,9 @@ public class ComponentMapperDefault<C extends Component> implements
   }
 
   @Override
-  public void forEach(
-      Consumer<Component> consumer
-  ) {
+  public LongMap.Values<C> componentsGet() {
 
-    this.entityIdComponentMap.values()
-        .forEach(consumer);
+    return this.entityIdComponentMap.values();
   }
 
 }

@@ -3,15 +3,12 @@ package com.sudoplay.ecs.core;
 import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.integration.spi.EntityReferenceStrategy;
+import com.sudoplay.ecs.util.LongMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-import java.util.BitSet;
-import java.util.Map;
-
-public class EntityReferenceStrategyDefault implements
+public class EntityReferenceStrategyDefault
+    implements
     EntityReferenceStrategy {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(
@@ -19,20 +16,26 @@ public class EntityReferenceStrategyDefault implements
 
   private long[] nextEntityId;
   private ComponentRegistry componentRegistry;
-  private Map<Long, Reference<EntityInternal>> entityReferenceMap;
-  private Map<Long, BitSet> entityComponentBitSetMap;
+  private LongMap<EntityInternal> entityReferenceMap;
+  private LongMap<PooledBitSet> entityComponentBitSetMap;
+  private ObjectPool<EntityInternal> entityInternalObjectPool;
+  private ObjectPool<PooledBitSet> pooledBitSetObjectPool;
 
   public EntityReferenceStrategyDefault(
       long[] nextEntityId,
       ComponentRegistry componentRegistry,
-      Map<Long, Reference<EntityInternal>> entityReferenceMap,
-      Map<Long, BitSet> entityComponentBitSetMap
+      LongMap<EntityInternal> entityReferenceMap,
+      LongMap<PooledBitSet> entityComponentBitSetMap,
+      ObjectPool<EntityInternal> entityInternalObjectPool,
+      ObjectPool<PooledBitSet> pooledBitSetObjectPool
   ) {
 
     this.nextEntityId = nextEntityId;
     this.componentRegistry = componentRegistry;
     this.entityReferenceMap = entityReferenceMap;
     this.entityComponentBitSetMap = entityComponentBitSetMap;
+    this.entityInternalObjectPool = entityInternalObjectPool;
+    this.pooledBitSetObjectPool = pooledBitSetObjectPool;
   }
 
   @Override
@@ -54,20 +57,17 @@ public class EntityReferenceStrategyDefault implements
 
       // entity hasn't been created yet, create entity
 
-      EntityInternal entity = new EntityInternal(this.nextEntityId[0]);
-      int componentCount = this.componentRegistry.componentCountGet();
+      EntityInternal entity = this.entityInternalObjectPool.get();
+      entity.init(this.nextEntityId[0]);
 
       // new entity bitset entry
       this.entityComponentBitSetMap.put(
           this.nextEntityId[0],
-          new BitSet(componentCount)
+          this.pooledBitSetObjectPool.get()
       );
 
       // cache the entity reference
-      this.entityReferenceMap.put(
-          this.nextEntityId[0],
-          new WeakReference<>(entity)
-      );
+      this.entityReferenceMap.put(this.nextEntityId[0], entity);
 
       // use up an id
       this.nextEntityId[0] += 1;
@@ -81,20 +81,19 @@ public class EntityReferenceStrategyDefault implements
       // entity id has already been assigned, check for
       // existing entity reference
 
-      Reference<EntityInternal> ref = this.entityReferenceMap.get(entityId);
+      EntityInternal entity = this.entityReferenceMap.get(entityId);
 
-      if (ref == null
-          || ref.get() == null) {
+      if (entity == null) {
 
         // reference is missing or expired, create a new one
 
-        EntityInternal entity = new EntityInternal(entityId);
-        this.entityReferenceMap.put(entityId, new WeakReference<>(entity));
-        int componentCount = this.componentRegistry.componentCountGet();
+        entity = this.entityInternalObjectPool.get();
+        entity.init(entityId);
+        this.entityReferenceMap.put(entityId, entity);
 
         this.entityComponentBitSetMap.put(
             entityId,
-            new BitSet(componentCount)
+            this.pooledBitSetObjectPool.get()
         );
 
         return entity;
@@ -105,8 +104,7 @@ public class EntityReferenceStrategyDefault implements
 
         // return active entity reference
 
-        return ref.get();
-
+        return entity;
       }
 
     } else if (entityId > this.nextEntityId[0]) {
@@ -123,4 +121,12 @@ public class EntityReferenceStrategyDefault implements
 
   }
 
+  @Override
+  public void reclaim(Entity entity) {
+
+    if (entity instanceof EntityInternal) {
+      ((EntityInternal) entity).reset();
+      this.entityInternalObjectPool.reclaim((EntityInternal) entity);
+    }
+  }
 }

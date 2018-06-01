@@ -1,13 +1,14 @@
 package com.sudoplay.ecs.core;
 
+import com.sudoplay.ecs.util.LongMap;
+
 import java.util.BitSet;
-import java.util.Map;
 
 public class EntitySetFactory {
 
-  private Map<Long, BitSet> entityComponentBitSetMap;
+  private LongMap<PooledBitSet> entityComponentBitSetMap;
 
-  public EntitySetFactory(Map<Long, BitSet> entityComponentBitSetMap) {
+  public EntitySetFactory(LongMap<PooledBitSet> entityComponentBitSetMap) {
 
     this.entityComponentBitSetMap = entityComponentBitSetMap;
   }
