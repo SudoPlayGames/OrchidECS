@@ -42,10 +42,10 @@ public class EntitySetStrategyCached
 
     if (entitySetInternal == null) {
       // create a new aspect entity set and add it to the local list
-      EntitySetInternal newEntitySet = this.aspectEntitySetFactory
+      entitySetInternal = this.aspectEntitySetFactory
           .createAspectEntitySet(aspect);
-      this.entitySetList.add(newEntitySet);
-      this.aspectEntitySetByAspectMap.put(aspect, newEntitySet);
+      this.entitySetList.add(entitySetInternal);
+      this.aspectEntitySetByAspectMap.put(aspect, entitySetInternal);
     }
 
     return entitySetInternal;
