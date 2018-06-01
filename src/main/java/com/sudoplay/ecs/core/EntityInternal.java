@@ -66,6 +66,7 @@ public class EntityInternal
 
     if (this.entityExists()) {
       this.world.componentAdd(this, component);
+      this.world.entityChange(this);
     }
   }
 
@@ -74,6 +75,7 @@ public class EntityInternal
 
     if (this.entityExists()) {
       this.world.componentRemove(this, componentClass);
+      this.world.entityChange(this);
     }
   }
 
