@@ -21,6 +21,7 @@ public class EntitySetInternal
   private List<Reference<Deque<Entity>>> eventHandlerAddList;
   private List<Reference<Deque<Entity>>> eventHandlerRemoveList;
   private List<Reference<Deque<Entity>>> toRemove;
+  private EntityIterator entityIterator;
 
   /* package */ EntitySetInternal(
       LongMap<PooledBitSet> entityComponentBitSetMap,
@@ -117,9 +118,19 @@ public class EntitySetInternal
   }
 
   @Override
-  public LongMap.Values<Entity> entitiesGet() {
+  public Iterable<Entity> entitiesGet() {
 
-    return this.entityMap.values();
+    if (this.entityIterator == null) {
+      this.entityIterator = new EntityIterator();
+    }
+
+    return this.entityIterator.setValues(this.entityMap.values());
+  }
+
+  @Override
+  public ReusableIterator<Entity> entityIteratorCreate() {
+
+    return new EntityIterator().setValues(new LongMap.Values<Entity>(this.entityMap));
   }
 
   @Override
@@ -161,6 +172,48 @@ public class EntitySetInternal
     if (!this.toRemove.isEmpty()) {
       list.removeAll(this.toRemove);
       this.toRemove.clear();
+    }
+  }
+
+  private static class EntityIterator
+      implements ReusableIterator<Entity> {
+
+    private LongMap.Values<Entity> values;
+
+    /* package */ EntityIterator setValues(LongMap.Values<Entity> values) {
+
+      this.values = values;
+      return this;
+    }
+
+    @Override
+    public boolean hasNext() {
+
+      return this.values.hasNext();
+    }
+
+    @Override
+    public Entity next() {
+
+      return this.values.next();
+    }
+
+    @Override
+    public void remove() {
+
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<Entity> iterator() {
+
+      return this;
+    }
+
+    @Override
+    public void reset() {
+
+      this.values.reset();
     }
   }
 

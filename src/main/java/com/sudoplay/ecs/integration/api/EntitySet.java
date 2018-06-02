@@ -1,17 +1,41 @@
 package com.sudoplay.ecs.integration.api;
 
-import com.sudoplay.ecs.util.LongMap;
-
 import java.util.Deque;
+import java.util.Iterator;
 
 public interface EntitySet {
 
   boolean contains(Entity entity);
 
-  LongMap.Values<Entity> entitiesGet();
+  /**
+   * Returns the same iterator each time this is called; not suitable for nested loops.
+   * <p>
+   * Remove method is not supported.
+   *
+   * @return value iterator
+   */
+  Iterable<Entity> entitiesGet();
+
+  /**
+   * Returns a new iterator each time this is called; suitable for nested loops.
+   * <p>
+   * The returned value should be cached and reused.
+   * <p>
+   * Remove method is not supported.
+   *
+   * @return value iterator
+   */
+  ReusableIterator<Entity> entityIteratorCreate();
 
   Deque<Entity> newDequeEventEntityAdd();
 
   Deque<Entity> newDequeEventEntityRemove();
+
+  interface ReusableIterator<T>
+      extends Iterator<T>,
+      Iterable<T> {
+
+    void reset();
+  }
 
 }
