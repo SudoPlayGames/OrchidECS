@@ -288,8 +288,6 @@ public class World {
   public void eventSubscribe(Object subscriber) {
 
     this.eventBus.subscribe(subscriber);
-    this.systemFieldInjector.inject(subscriber);
-
   }
 
   public void eventPublish(EntityEventBase event) {

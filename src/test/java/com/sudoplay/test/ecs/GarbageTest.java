@@ -9,12 +9,12 @@ public class GarbageTest {
 
   public static void main(String[] args) throws InterruptedException {
 
+    SystemA system = new SystemA();
+
     World world = new WorldBuilder()
+        .registerSystems(system)
         .registerComponent(LifeComponent.class)
         .create();
-
-    SystemA system = new SystemA(world);
-    world.eventSubscribe(system);
 
     Entity entity = world.entityCreate();
     LifeComponent component = world.componentCreate(LifeComponent.class);
@@ -32,6 +32,7 @@ public class GarbageTest {
 
   public static class SystemA {
 
+    @InjectWorld
     private World world;
 
     @InjectComponentMapper(LifeComponent.class)
@@ -39,11 +40,6 @@ public class GarbageTest {
 
     @InjectEntitySet(all = LifeComponent.class)
     private EntitySet entitySet;
-
-    public SystemA(World world) {
-
-      this.world = world;
-    }
 
     public void update() {
 
