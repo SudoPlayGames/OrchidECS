@@ -7,6 +7,8 @@ import com.sudoplay.ecs.integration.spi.ComponentRegistry;
 import com.sudoplay.ecs.util.ClassFieldIterator;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class SystemFieldInjectorDefault
     implements
@@ -59,6 +61,41 @@ public class SystemFieldInjectorDefault
         }
       }
     });
+
+    for (Method method : objectToInject.getClass().getDeclaredMethods()) {
+
+      PostInjection annotation = method.getAnnotation(PostInjection.class);
+
+      if (annotation != null) {
+
+        if (method.getParameterTypes().length > 0) {
+          continue;
+        }
+
+        try {
+          method.invoke(objectToInject);
+
+        } catch (IllegalAccessException e) {
+          throw new RuntimeException(
+              String.format(
+                  "Unable to invoke post-injection method [%s] in class [%s]",
+                  method,
+                  objectToInject.getClass()
+              ), e
+          );
+
+        } catch (InvocationTargetException e) {
+          throw new RuntimeException(
+              String.format(
+                  "Unable to invoke post-injection method [%s] in class [%s]",
+                  method,
+                  objectToInject.getClass()
+              ), e
+          );
+        }
+      }
+
+    }
   }
 
   private void injectWorld(Object objectToInject, Field field) {
