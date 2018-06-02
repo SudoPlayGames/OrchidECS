@@ -1,13 +1,15 @@
 package com.sudoplay.ecs.integration.spi;
 
 import com.sudoplay.ecs.integration.api.Entity;
+import com.sudoplay.ecs.integration.api.Poolable;
 
-public abstract class EntityEventBase {
+public abstract class EntityEventBase
+    implements Poolable {
 
   private Entity entity;
   private boolean cancelled;
 
-  protected EntityEventBase(Entity entity) {
+  public void setEntity(Entity entity) {
 
     this.entity = entity;
   }
@@ -25,6 +27,13 @@ public abstract class EntityEventBase {
   public boolean isCancelled() {
 
     return this.cancelled;
+  }
+
+  @Override
+  public void reset() {
+
+    this.entity = null;
+    this.cancelled = false;
   }
 
   @Override

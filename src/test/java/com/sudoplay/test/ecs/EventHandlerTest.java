@@ -71,12 +71,11 @@ public class EventHandlerTest {
   }
 
   static class PriorityTestEvent
-      extends
-      EntityEventBase {
+      extends EntityEventBase {
 
     PriorityTestEvent(Entity entity) {
 
-      super(entity);
+      this.setEntity(entity);
     }
 
   }
@@ -172,12 +171,11 @@ public class EventHandlerTest {
   }
 
   static class ComponentFilterTestEvent
-      extends
-      EntityEventBase {
+      extends EntityEventBase {
 
     ComponentFilterTestEvent(Entity entity) {
 
-      super(entity);
+      this.setEntity(entity);
     }
 
   }
