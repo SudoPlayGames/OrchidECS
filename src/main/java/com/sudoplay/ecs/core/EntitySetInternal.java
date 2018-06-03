@@ -136,7 +136,7 @@ public class EntitySetInternal
   @Override
   public Deque<Entity> newDequeEventEntityAdd() {
 
-    Deque<Entity> observer = new LinkedList<Entity>();
+    Deque<Entity> observer = new ArrayDeque<Entity>();
     this.eventHandlerAddList.add(new WeakReference<Deque<Entity>>(observer));
 
     return observer;
@@ -145,7 +145,7 @@ public class EntitySetInternal
   @Override
   public Deque<Entity> newDequeEventEntityRemove() {
 
-    Deque<Entity> observer = new LinkedList<Entity>();
+    Deque<Entity> observer = new ArrayDeque<Entity>();
     this.eventHandlerRemoveList.add(new WeakReference<Deque<Entity>>(observer));
 
     return observer;
