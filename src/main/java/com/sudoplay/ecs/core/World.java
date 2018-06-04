@@ -118,16 +118,16 @@ public class World {
    * @param componentRegistry              stores component class / index relations
    * @param componentMapperStrategy        provides component mappers
    * @param entitySetList                  the entity set list
-   * @param entityReferenceMap
-   * @param entityComponentBitSetMap       maps entity id's to component id flags as bitsets
+   * @param entityReferenceMap             maintains the relationship between entity ids and reference objects
+   * @param entityComponentBitSetMap       maps entity id's to component id flags as bit sets
    * @param eventBus                       the event bus
    * @param worldSerializer                serializes the world
    * @param componentsByTypeIndexMap       the entity store
    * @param systemFieldInjector            injects system fields, entity sets and component mappers
    * @param entityReferenceStrategy        provides entity references
-   * @param componentSystemEventObjectPool
-   * @param pooledBitSetObjectPool
-   * @param componentPoolMap
+   * @param componentSystemEventObjectPool provides and reuses component system events
+   * @param pooledBitSetObjectPool         provides and reuses bit sets
+   * @param componentPoolMap               provides and reuses components
    * @param nextEntityId                   the next entity id
    */
   /* package */ World(
@@ -368,6 +368,8 @@ public class World {
 
       PooledBitSet pooledBitSet = this.entityRemoveInternal(entity);
 
+      // We explicitly use a for loop here instead of an iterator to reduce garbage.
+      //noinspection ForLoopReplaceableByForEach
       for (int i = 0; i < this.entitySetList.size(); i++) {
         EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.REMOVE);
@@ -390,6 +392,8 @@ public class World {
         continue;
       }
 
+      // We explicitly use a for loop here instead of an iterator to reduce garbage.
+      //noinspection ForLoopReplaceableByForEach
       for (int i = 0; i < this.entitySetList.size(); i++) {
         EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.ADD);
@@ -410,6 +414,8 @@ public class World {
         continue;
       }
 
+      // We explicitly use a for loop here instead of an iterator to reduce garbage.
+      //noinspection ForLoopReplaceableByForEach
       for (int i = 0; i < this.entitySetList.size(); i++) {
         EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.CHANGE);
