@@ -2,6 +2,7 @@ package com.sudoplay.ecs.core;
 
 import com.sudoplay.ecs.integration.api.ComponentMapper;
 import com.sudoplay.ecs.integration.api.Entity;
+import com.sudoplay.ecs.integration.api.WorldEvent;
 import com.sudoplay.ecs.integration.spi.*;
 import com.sudoplay.ecs.util.IntMap;
 import com.sudoplay.ecs.util.LongMap;

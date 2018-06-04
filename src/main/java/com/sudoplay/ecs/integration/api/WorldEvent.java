@@ -1,4 +1,4 @@
-package com.sudoplay.ecs.core;
+package com.sudoplay.ecs.integration.api;
 
 import com.sudoplay.ecs.integration.spi.EntityEventBase;
 
