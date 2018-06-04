@@ -4,9 +4,8 @@ import com.sudoplay.ecs.integration.api.Entity;
 import com.sudoplay.ecs.integration.api.EntitySet;
 import com.sudoplay.ecs.util.LongMap;
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.BitSet;
+import java.util.Iterator;
 
 public class EntitySetInternal
     implements EntitySet {
@@ -18,9 +17,6 @@ public class EntitySetInternal
   private LongMap<PooledBitSet> entityComponentBitSetMap;
   private Aspect aspect;
   private LongMap<Entity> entityMap;
-  private List<Reference<Deque<Entity>>> eventHandlerAddList;
-  private List<Reference<Deque<Entity>>> eventHandlerRemoveList;
-  private List<Reference<Deque<Entity>>> toRemove;
   private EntityIterator entityIterator;
 
   /* package */ EntitySetInternal(
@@ -32,10 +28,6 @@ public class EntitySetInternal
     this.aspect = aspect;
 
     this.entityMap = new LongMap<Entity>(entityComponentBitSetMap.size());
-
-    this.eventHandlerAddList = new ArrayList<Reference<Deque<Entity>>>();
-    this.eventHandlerRemoveList = new ArrayList<Reference<Deque<Entity>>>();
-    this.toRemove = new ArrayList<Reference<Deque<Entity>>>();
   }
 
   /* package */ void onSystemEvent(
@@ -65,10 +57,6 @@ public class EntitySetInternal
 
         this.entityMap.put(entityId, entity);
 
-        // notify our subscribers and do some reference bookkeeping
-
-        this.observerNotify(entity, this.eventHandlerAddList);
-
       } else if (!interested && contains) {
 
         // we don't care about this entity anymore - discard it
@@ -76,10 +64,6 @@ public class EntitySetInternal
         // this view is no longer interested in the entity
 
         this.entityMap.remove(entityId);
-
-        // notify our subscribers and do some reference bookkeeping
-
-        this.observerNotify(entity, this.eventHandlerRemoveList);
 
       } else if (contains) {
 
@@ -100,10 +84,6 @@ public class EntitySetInternal
         // remove it
 
         this.entityMap.remove(entityId);
-
-        // notify our subscribers and do some reference bookkeeping
-
-        this.observerNotify(entity, this.eventHandlerRemoveList);
 
       }
 
@@ -131,48 +111,6 @@ public class EntitySetInternal
   public ReusableIterator<Entity> entityIteratorCreate() {
 
     return new EntityIterator().setValues(new LongMap.Values<Entity>(this.entityMap));
-  }
-
-  @Override
-  public Deque<Entity> newDequeEventEntityAdd() {
-
-    Deque<Entity> observer = new ArrayDeque<Entity>();
-    this.eventHandlerAddList.add(new WeakReference<Deque<Entity>>(observer));
-
-    return observer;
-  }
-
-  @Override
-  public Deque<Entity> newDequeEventEntityRemove() {
-
-    Deque<Entity> observer = new ArrayDeque<Entity>();
-    this.eventHandlerRemoveList.add(new WeakReference<Deque<Entity>>(observer));
-
-    return observer;
-  }
-
-  private void observerNotify(
-      EntityInternal entity,
-      List<Reference<Deque<Entity>>> list
-  ) {
-
-    for (int i = 0; i < list.size(); i++) {
-      Reference<Deque<Entity>> ref = list.get(i);
-      Deque<Entity> eventHandler = ref.get();
-
-      if (eventHandler == null) {
-        this.toRemove.add(ref);
-        ref.clear();
-        continue;
-      }
-
-      eventHandler.offer(entity);
-    }
-
-    if (!this.toRemove.isEmpty()) {
-      list.removeAll(this.toRemove);
-      this.toRemove.clear();
-    }
   }
 
   private static class EntityIterator

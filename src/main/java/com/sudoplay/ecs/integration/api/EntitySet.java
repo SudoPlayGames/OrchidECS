@@ -1,6 +1,5 @@
 package com.sudoplay.ecs.integration.api;
 
-import java.util.Deque;
 import java.util.Iterator;
 
 public interface EntitySet {
@@ -26,10 +25,6 @@ public interface EntitySet {
    * @return value iterator
    */
   ReusableIterator<Entity> entityIteratorCreate();
-
-  Deque<Entity> newDequeEventEntityAdd();
-
-  Deque<Entity> newDequeEventEntityRemove();
 
   interface ReusableIterator<T>
       extends Iterator<T>,
