@@ -2,7 +2,7 @@ package com.sudoplay.ecs.integration.api;
 
 import com.sudoplay.ecs.integration.spi.EntityEventBase;
 
-public abstract class WorldEvent
+public class WorldEvent
     extends EntityEventBase {
 
   /**
@@ -55,4 +55,7 @@ public abstract class WorldEvent
 
   }
 
+  private WorldEvent() {
+    //
+  }
 }
