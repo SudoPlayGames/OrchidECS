@@ -24,9 +24,22 @@ import java.util.*;
       }
     };
 
-    private int priority;
-    private Method method;
-    private WeakReference<Object> subscriberReference;
+    private final int priority;
+    private final Method method;
+    private final WeakReference<Object> subscriberReference;
+    private final Class<?> eventType;
+
+    /**
+     * This is called before attempting to publish an event to this subscriber
+     * during the call to {@link EventBus#publishToAll(EntityEventBase)}.
+     *
+     * @param event the event
+     * @return true if this subscriber can handle this event
+     */
+    /* package */ boolean canHandleEvent(EntityEventBase event) {
+
+      return event != null && this.eventType.isAssignableFrom(event.getClass());
+    }
 
     /* package */ Subscriber(
         int priority,
@@ -37,11 +50,11 @@ import java.util.*;
       this.priority = priority;
       this.method = method;
       this.subscriberReference = new WeakReference<Object>(subscriberReference);
-    }
 
-    /* package */ int getPriority() {
-
-      return this.priority;
+      // We can safely access the parameter types because we are sure that the passed
+      // method has exactly one parameter. This check is performed by the event bus
+      // before creating a new subscriber.
+      this.eventType = this.method.getParameterTypes()[0];
     }
 
     /* package */ void invoke(EntityEventBase entityEvent) throws InvocationTargetException, IllegalAccessException {
@@ -230,6 +243,10 @@ import java.util.*;
       if (subscriber.isInvalid()) {
         // cleanup dead subscribers
         it.remove();
+        continue;
+      }
+
+      if (!subscriber.canHandleEvent(event)) {
         continue;
       }
 
