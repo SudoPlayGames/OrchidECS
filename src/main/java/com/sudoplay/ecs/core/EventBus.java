@@ -57,9 +57,9 @@ import java.util.*;
 
     }
 
-    /* package */ boolean exists() {
+    /* package */ boolean isInvalid() {
 
-      return this.subscriberReference.get() != null;
+      return this.subscriberReference.get() == null;
     }
 
     @Override
@@ -227,7 +227,7 @@ import java.util.*;
 
       Subscriber subscriber = it.next();
 
-      if (!subscriber.exists()) {
+      if (subscriber.isInvalid()) {
         // cleanup dead subscribers
         it.remove();
         continue;

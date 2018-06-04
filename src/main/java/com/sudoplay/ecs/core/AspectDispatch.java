@@ -45,7 +45,7 @@ import java.util.List;
 
       EventBus.Subscriber subscriber = it.next();
 
-      if (!subscriber.exists()) {
+      if (subscriber.isInvalid()) {
         it.remove();
         continue;
       }
