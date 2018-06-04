@@ -94,11 +94,18 @@ public class World {
   private ObjectPool<PooledBitSet> pooledBitSetObjectPool;
 
   private Map<Class<? extends Component>, ObjectPool> componentPoolMap;
+
   /**
    * Contains the next entity id at position 0; currently only used by this
    * class during serialization
    */
   private long[] nextEntityId;
+
+  private final WorldEvent.EntityAddPreEvent entityAddPreEvent;
+  private final WorldEvent.EntityAddPostEvent entityAddPostEvent;
+  private final WorldEvent.EntityRemovePreEvent entityRemovePreEvent;
+  private final WorldEvent.EntityRemovePostEvent entityRemovePostEvent;
+  private final WorldEvent.EntityChangedEvent entityChangedEvent;
 
   // --------------------------------------------------------------------------
   // -- Initialization
@@ -163,6 +170,12 @@ public class World {
     this.entityQueueAdded = new ArrayDeque<EntityInternal>();
     this.entityQueueChanged = new ArrayDeque<EntityInternal>();
     this.entityQueueRemoved = new ArrayDeque<EntityInternal>();
+
+    this.entityAddPreEvent = new WorldEvent.EntityAddPreEvent();
+    this.entityAddPostEvent = new WorldEvent.EntityAddPostEvent();
+    this.entityRemovePreEvent = new WorldEvent.EntityRemovePreEvent();
+    this.entityRemovePostEvent = new WorldEvent.EntityRemovePostEvent();
+    this.entityChangedEvent = new WorldEvent.EntityChangedEvent();
   }
 
   // --------------------------------------------------------------------------
@@ -295,6 +308,38 @@ public class World {
     this.eventBus.publish(event);
   }
 
+  private boolean eventPublishEntityAddPre(EntityInternal entity) {
+
+    this.entityAddPreEvent.setEntity(entity);
+    this.eventPublish(this.entityAddPreEvent);
+    return this.entityAddPreEvent.isCancelled();
+  }
+
+  private void eventPublishEntityAddPost(EntityInternal entity) {
+
+    this.entityAddPostEvent.setEntity(entity);
+    this.eventPublish(this.entityAddPostEvent);
+  }
+
+  private boolean eventPublishEntityRemovePre(EntityInternal entity) {
+
+    this.entityRemovePreEvent.setEntity(entity);
+    this.eventPublish(this.entityRemovePreEvent);
+    return this.entityRemovePreEvent.isCancelled();
+  }
+
+  private void eventPublishEntityRemovePost(EntityInternal entity) {
+
+    this.entityRemovePostEvent.setEntity(entity);
+    this.eventPublish(this.entityRemovePostEvent);
+  }
+
+  private void eventPublishEntityChanged(EntityInternal entity) {
+
+    this.entityChangedEvent.setEntity(entity);
+    this.eventPublish(this.entityChangedEvent);
+  }
+
   // --------------------------------------------------------------------------
   // -- Update
   // --------------------------------------------------------------------------
@@ -316,6 +361,10 @@ public class World {
     // remove event
     while ((entity = this.entityQueueRemoved.pollFirst()) != null) {
 
+      if (this.eventPublishEntityRemovePre(entity)) {
+        continue;
+      }
+
       long id = entity.getId();
 
       this.entityReferenceMap.remove(id);
@@ -335,6 +384,8 @@ public class World {
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.REMOVE);
       }
 
+      this.eventPublishEntityRemovePost(entity);
+
       this.entityReferenceStrategy.reclaim(entity);
       this.pooledBitSetObjectPool.reclaim(pooledBitSet);
     }
@@ -342,10 +393,16 @@ public class World {
     // added event
     while ((entity = this.entityQueueAdded.pollFirst()) != null) {
 
+      if (this.eventPublishEntityAddPre(entity)) {
+        continue;
+      }
+
       for (int i = 0; i < this.entitySetList.size(); i++) {
         EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.ADD);
       }
+
+      this.eventPublishEntityAddPost(entity);
     }
 
     // changed event
@@ -355,6 +412,8 @@ public class World {
         EntitySetInternal entitySet = this.entitySetList.get(i);
         entitySet.onSystemEvent(entity, EntitySetInternal.EventType.CHANGE);
       }
+
+      this.eventPublishEntityChanged(entity);
     }
 
   }
