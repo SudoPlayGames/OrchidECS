@@ -366,19 +366,7 @@ public class World {
         continue;
       }
 
-      long id = entity.getId();
-
-      this.entityReferenceMap.remove(id);
-
-      PooledBitSet pooledBitSet = this.entityComponentBitSetMap.remove(id);
-      BitSet bitSet = pooledBitSet.getBitSet();
-
-      for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-        LongMap<Component> map = this.componentsByTypeIndexMap.get(i);
-        Component component = map.remove(id);
-        //noinspection unchecked
-        this.componentPoolMap.get(component.getClass()).reclaim(component);
-      }
+      PooledBitSet pooledBitSet = this.entityRemoveInternal(entity);
 
       for (int i = 0; i < this.entitySetList.size(); i++) {
         EntitySetInternal entitySet = this.entitySetList.get(i);
@@ -395,6 +383,9 @@ public class World {
     while ((entity = this.entityQueueAdded.pollFirst()) != null) {
 
       if (this.eventPublishEntityAddPre(entity)) {
+        PooledBitSet pooledBitSet = this.entityRemoveInternal(entity);
+        this.entityReferenceStrategy.reclaim(entity);
+        this.pooledBitSetObjectPool.reclaim(pooledBitSet);
         continue;
       }
 
@@ -417,6 +408,25 @@ public class World {
       this.eventPublishEntityChanged(entity);
     }
 
+  }
+
+  private PooledBitSet entityRemoveInternal(EntityInternal entity) {
+
+    long id = entity.getId();
+
+    this.entityReferenceMap.remove(id);
+
+    PooledBitSet pooledBitSet = this.entityComponentBitSetMap.remove(id);
+    BitSet bitSet = pooledBitSet.getBitSet();
+
+    for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
+      LongMap<Component> map = this.componentsByTypeIndexMap.get(i);
+      Component component = map.remove(id);
+      //noinspection unchecked
+      this.componentPoolMap.get(component.getClass()).reclaim(component);
+    }
+
+    return pooledBitSet;
   }
 
   private void processComponentEvent(ComponentSystemEvent event) {
