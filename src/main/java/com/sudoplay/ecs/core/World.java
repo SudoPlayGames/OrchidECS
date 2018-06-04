@@ -386,6 +386,7 @@ public class World {
         PooledBitSet pooledBitSet = this.entityRemoveInternal(entity);
         this.entityReferenceStrategy.reclaim(entity);
         this.pooledBitSetObjectPool.reclaim(pooledBitSet);
+        entity.setWorld(null);
         continue;
       }
 
@@ -399,6 +400,15 @@ public class World {
 
     // changed event
     while ((entity = this.entityQueueChanged.pollFirst()) != null) {
+
+      // We need to check here if the entity is still valid because the
+      // entity can be created and have components added to it, which
+      // triggers the changed event, but be removed by a cancelled add
+      // event above.
+
+      if (!entity.entityExists()) {
+        continue;
+      }
 
       for (int i = 0; i < this.entitySetList.size(); i++) {
         EntitySetInternal entitySet = this.entitySetList.get(i);
